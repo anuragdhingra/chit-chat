@@ -24,8 +24,6 @@ jobs:
           MYSQL_PASSWORD: password
           MYSQL_DATABASE: chitchat
 
-    working_directory: /go/src/github.com/anuragdhingra/lets-chat
-
     steps:
       - checkout
       - run: go get -u github.com/golang/dep/cmd/dep
