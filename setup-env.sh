@@ -6,4 +6,8 @@ case $CIRCLE_BRANCH in
         export ENVIRONMENT="production"
         export HEROKU_APP="lets-chatt"
         ;;
+    "develop")
+        export ENVIRONMENT="production"
+        export HEROKU_APP="lets-chatt"
+        ;;
 esac
