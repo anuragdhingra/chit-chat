@@ -1,26 +1,30 @@
 package main
 
 import (
-	"github.com/anuragdhingra/lets-chat/data"
-	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/anuragdhingra/lets-chat/data"
+	"github.com/julienschmidt/httprouter"
 )
 
+// ThreadInfoPublic handles public data of User
 type ThreadInfoPublic struct {
-	Thread data.Thread
+	Thread    data.Thread
 	CreatedBy data.User
-	Posts []PostInfoPublic
+	Posts     []PostInfoPublic
 }
 
+// ThreadInfoPrivate handles private data of User
 type ThreadInfoPrivate struct {
-	Thread data.Thread
+	Thread    data.Thread
 	CreatedBy data.User
-	User data.User
-	Posts []PostInfoPublic
+	User      data.User
+	Posts     []PostInfoPublic
 }
 
+// NewThread function creates a new thread
 func NewThread(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	sess, err := session(w, r)
 	if err == nil {
@@ -29,9 +33,8 @@ func NewThread(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		if err != nil {
 			log.Print(err)
 			return
-		} else {
-			generateHTML(w, data, "layout", "private.navbar", "new.thread")
 		}
+		generateHTML(w, data, "layout", "private.navbar", "new.thread")
 	} else {
 		log.Print(err)
 		http.Redirect(w, r, "/login", http.StatusFound)
@@ -39,6 +42,7 @@ func NewThread(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	}
 }
 
+// CreateThread function requests a new thread from NewThread function
 func CreateThread(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	err := r.ParseForm()
 	throwError(err)
@@ -50,47 +54,47 @@ func CreateThread(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	createThreadRequest := data.CreateThreadRequest{
 		r.PostFormValue("topic"),
 		user.Id,
-
 	}
-	threadId, err := createThreadRequest.Create()
+	threadID, err := createThreadRequest.Create()
 	log.Print(threadId)
 	throwError(err)
-	url := "/threads/" +  strconv.Itoa(threadId)
+	url := "/threads/" + strconv.Itoa(threadId)
 	log.Print(url)
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
+// FindThread finds the thread by Id
 func FindThread(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	threadId := p.ByName("id")
+	threadID := p.ByName("id")
 	thread, err := data.ThreadByID(threadId)
 	if err != nil {
 		log.Print(err)
 		return
+	}
+	user, err := data.UserById(thread.UserId)
+	throwError(err)
+	posts, err := data.PostsByThreadId(thread.Id)
+	throwError(err)
+	postList := CreatePostList(posts)
+	sess, err := session(w, r)
+	if err != nil {
+		data := ThreadInfoPublic{thread, user, postList}
+		generateHTML(w, data, "layout", "public.navbar", "public.thread")
 	} else {
-		user, err := data.UserById(thread.UserId)
+		loggedInUser, err := sess.User()
 		throwError(err)
-		posts, err := data.PostsByThreadId(thread.Id)
-		throwError(err)
-		postList := CreatePostList(posts)
-		sess, err := session(w, r)
-		if err != nil {
-			data := ThreadInfoPublic{thread, user,  postList}
-			generateHTML(w, data, "layout","public.navbar", "public.thread")
-		} else {
-			loggedInUser, err := sess.User()
-			throwError(err)
-			data := ThreadInfoPrivate{thread, user, loggedInUser, postList}
-			generateHTML(w, data, "layout", "private.navbar","private.thread")
-		}
+		data := ThreadInfoPrivate{thread, user, loggedInUser, postList}
+		generateHTML(w, data, "layout", "private.navbar", "private.thread")
 	}
 }
 
+// CreateThreadList creates a list of threads
 func CreateThreadList(threads []data.Thread) (threadListPublic []ThreadInfoPublic) {
 	for _, thread := range threads {
-		threadUserId := thread.UserId
+		threadUserID := thread.UserId
 		user, err := data.UserById(threadUserId)
 		throwError(err)
-		threadInfoPublic := ThreadInfoPublic{thread,user, nil}
+		threadInfoPublic := ThreadInfoPublic{thread, user, nil}
 		threadListPublic = append(threadListPublic, threadInfoPublic)
 	}
 	return

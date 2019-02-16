@@ -6,8 +6,9 @@ import (
 	"os"
 	"time"
 )
-import _ "github.com/go-sql-driver/mysql"
 
+// mysql driver for sql database
+import _ "github.com/go-sql-driver/mysql"
 
 var Db *sql.DB
 
@@ -17,11 +18,10 @@ func init() {
 	// To avoid client timeout
 	Db.SetConnMaxLifetime(time.Second)
 
-	if err!= nil {
+	if err != nil {
 		log.Print(err)
 		return
-	} else
-	{
+	} else {
 		log.Print("Successfully connected to datasource: " + getDatasource())
 	}
 	return
@@ -32,4 +32,3 @@ func getDatasource() (dataSource string) {
 		")/" + os.Getenv("DB_NAME") + "?parseTime=true"
 	return
 }
-

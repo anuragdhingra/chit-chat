@@ -3,11 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"github.com/anuragdhingra/lets-chat/data"
-	"github.com/julienschmidt/httprouter"
-	"github.com/nu7hatch/gouuid"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -15,39 +10,45 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/anuragdhingra/lets-chat/data"
+	"github.com/julienschmidt/httprouter"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 )
 
 var googleOauthConfig = &oauth2.Config{
-	RedirectURL: os.Getenv("OAUTH_REDIRECT_URI"),
-	ClientID: os.Getenv("CLIENT_ID"),
+	RedirectURL:  os.Getenv("OAUTH_REDIRECT_URI"),
+	ClientID:     os.Getenv("CLIENT_ID"),
 	ClientSecret: os.Getenv("CLIENT_SECRET"),
-	Scopes: []string{"https://www.googleapis.com/auth/userinfo.email"},
-	Endpoint: google.Endpoint,
+	Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
+	Endpoint:     google.Endpoint,
 }
 
+// GoogleUserInfo struct provides the info of the user
 type GoogleUserInfo struct {
-	Id int `json:"id"`
-	Email string `json:"email"`
-	VerifiedEmail bool `json:"verified_email"`
-	Name string `json:"name"`
-	GivenName string `json:"given_name"`
-	FamilyName string `json:"family_name"`
-	Link url.URL `json:"link"`
-	Picture url.URL `json:"picture"`
+	ID            int     `json:"id"`
+	Email         string  `json:"email"`
+	VerifiedEmail bool    `json:"verified_email"`
+	Name          string  `json:"name"`
+	GivenName     string  `json:"given_name"`
+	FamilyName    string  `json:"family_name"`
+	Link          url.URL `json:"link"`
+	Picture       url.URL `json:"picture"`
 }
 
+const oauthGoogleURLAPI = "https://www.googleapis.com/oauth2/v2/userinfo?access_token="
 
-const oauthGoogleUrlAPI = "https://www.googleapis.com/oauth2/v2/userinfo?access_token="
-
+// GoogleSignUp registers the user
 func GoogleSignUp(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	u4, _ := uuid.NewV4()
 	oauthState := u4.String()
 	cookie := http.Cookie{
-		Name:"oauthState",
-		Value:oauthState,
+		Name:     "oauthState",
+		Value:    oauthState,
 		HttpOnly: true,
-		Expires: time.Now().Add(365 * 24 * time.Hour),
-		Path:"/oauth/google",
+		Expires:  time.Now().Add(365 * 24 * time.Hour),
+		Path:     "/oauth/google",
 	}
 
 	http.SetCookie(w, &cookie)
@@ -56,6 +57,7 @@ func GoogleSignUp(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
+// GoogleSignUpCallback returns the data from API and authenticates the user
 func GoogleSignUpCallback(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	oauthStateCookie, _ := r.Cookie("oauthState")
 	oauthState := oauthStateCookie.Value
@@ -101,10 +103,10 @@ func GoogleSignUpCallback(w http.ResponseWriter, r *http.Request, _ httprouter.P
 	throwError(err)
 	session, err := loggedInUser.CreateSession()
 	cookie := http.Cookie{
-		Name:"_cookie",
-		Value: session.Uuid,
+		Name:     "_cookie",
+		Value:    session.Uuid,
 		HttpOnly: true,
-		Path:"/",
+		Path:     "/",
 	}
 	http.SetCookie(w, &cookie)
 	http.Redirect(w, r, "/", 302)

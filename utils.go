@@ -3,21 +3,22 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/anuragdhingra/lets-chat/data"
-	"golang.org/x/crypto/bcrypt"
 	"html/template"
 	"log"
 	"net/http"
+
+	"github.com/anuragdhingra/lets-chat/data"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func generateHTML(writer http.ResponseWriter, data interface{}, filenames ...string) {
-	 var files []string
-	 for _, file := range filenames {
-	 	files = append(files, fmt.Sprintf("templates/%s.html", file))
-	 }
+	var files []string
+	for _, file := range filenames {
+		files = append(files, fmt.Sprintf("templates/%s.html", file))
+	}
 
-	 templates := template.Must(template.ParseFiles(files...))
-	 templates.ExecuteTemplate(writer,"layout", data)
+	templates := template.Must(template.ParseFiles(files...))
+	templates.ExecuteTemplate(writer, "layout", data)
 }
 
 func throwError(err error) {
@@ -41,12 +42,11 @@ func session(w http.ResponseWriter, r *http.Request) (session data.Session, err 
 	if err != nil {
 		log.Print(err)
 		return
-	} else {
-		session = data.Session{Uuid:cookie.Value}
-		ok,_ := session.Check()
-		if !ok {
-			err = errors.New("Invalid session")
-		}
+	}
+	session = data.Session{Uuid: cookie.Value}
+	ok, _ := session.Check()
+	if !ok {
+		err = errors.New("Invalid session")
 	}
 	return
 }
